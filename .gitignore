@@ -114,9 +114,9 @@ $RECYCLE.BIN/
 # My files
 logs/
 system/*
-!system/
+!system/.gitkeep
 databases/*
-!databases/
+!databases/.gitkeep
 *.session
 creds.json
 messages/msg copy.md
