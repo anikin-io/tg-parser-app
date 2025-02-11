@@ -115,8 +115,11 @@ $RECYCLE.BIN/
 logs/
 system/*
 !system/.gitkeep
-databases/
+csv_databases/
+sqlite_database/
+tdata_folder/
 *.session
 creds.json
 messages/msg.md
 README.md
+res_session/

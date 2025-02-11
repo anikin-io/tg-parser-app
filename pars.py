@@ -195,7 +195,7 @@ class main():
 
         print('[+] Сохранение в файл...')
         m_file = input("[+] Введите название файла для сохранения: ")
-        with open(f"databases/{m_file}.csv", "w", encoding='UTF-8') as f:
+        with open(f"csv_databases/{m_file}.csv", "w", encoding='UTF-8') as f:
             writer = csv.writer(f, delimiter=",", lineterminator="\n")
             writer.writerow(['username', 'user_id', 'access_hash', 'name', 'group', 'group_username', 'message_sent'])
             for user in all_participants:

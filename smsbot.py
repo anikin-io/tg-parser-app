@@ -11,19 +11,21 @@ import gspread
 import portalocker
 from aiogram import Bot, Dispatcher
 from markdown import markdown
-from opentele.api import API, CreateNewSession, UseCurrentSession
-from opentele.td import TDesktop
-from opentele.tl import TelegramClient
+
+# from opentele.api import API, CreateNewSession, UseCurrentSession
+# from opentele.td import TDesktop
+# from opentele.tl import TelegramClient
 from telethon import errors
 from telethon.errors import SessionPasswordNeededError
 from telethon.errors.rpcerrorlist import PeerFloodError
 from telethon.sessions import SQLiteSession
-
-# from telethon.sync import TelegramClient
+from telethon.sync import TelegramClient
 from telethon.tl.functions.channels import JoinChannelRequest
 from telethon.tl.types import InputPeerUser, PeerChannel, PeerUser
 
-from messages import MESSAGES
+from .config import config
+from .config.messages import MESSAGES
+from .core.utils.logger import logger
 
 # re="\033[1;31m"
 # ye="\033[1;33m"
@@ -216,27 +218,27 @@ STATUS_COLUMN = 9  # Столбец со статусами
 DATE_CONTINUATION_COLUMN = 10  # Столбец с датами продолжения работы
 ACCOUNT_NAME_COLUMN = 11
 # Указываем путь к JSON-файлу с ключами для сервисного аккаунта
-gs = gspread.service_account(filename="creds.json")
+gs = gspread.service_account(filename=os.path.join("config", "creds.json"))
 # Открываем таблицу по имени
 sheet = gs.open("Accounts").sheet1
 # Токен вашего бота, полученный от BotFather
-API_TOKEN = getenv("API_TOKEN")
+API_TOKEN = config.API_TOKEN
 # Идентификатор чата (ваш Telegram ID)
-CHAT_ID = getenv("CHAT_ID")
+CHAT_ID = config.CHAT_ID
 # Создаем объект бота
 dp = Dispatcher()
 
 # Настройка логирования
-log_directory = "logs"
-if not os.path.exists(log_directory):
-    os.makedirs(log_directory)
-logging.basicConfig(
-    filename=os.path.join(log_directory, "smsbot.log"),  # Путь к лог-файлу
-    filemode="a",  # Режим добавления (append) в файл
-    format="%(asctime)s - %(levelname)s - %(message)s",  # Формат логов
-    level=logging.INFO,  # Уровень логирования: INFO
-    encoding="utf-8",  # Указываем кодировку UTF-8
-)
+# log_directory = "logs"
+# if not os.path.exists(log_directory):
+#     os.makedirs(log_directory)
+# logging.basicConfig(
+#     filename=os.path.join(log_directory, "smsbot.log"),  # Путь к лог-файлу
+#     filemode="a",  # Режим добавления (append) в файл
+#     format="%(asctime)s - %(levelname)s - %(message)s",  # Формат логов
+#     level=logging.INFO,  # Уровень логирования: INFO
+#     encoding="utf-8",  # Указываем кодировку UTF-8
+# )
 
 
 def get_account_status(account, sheet):
@@ -308,7 +310,8 @@ def reset_in_work_status(sheet):
         if status == STATUS_IN_WORK:
             sheet.update_cell(row, STATUS_COLUMN, STATUS_FREE)
             print(MESSAGES["reset_status"].format(phone=account["phone"]))
-            logging.info(MESSAGES["reset_status"].format(phone=account["phone"]))
+            # logging.info(MESSAGES["reset_status"].format(phone=account["phone"]))
+            logger.info(MESSAGES["reset_status"].format(phone=account["phone"]))
 
 
 # Функция для выбора свободных аккаунтов
@@ -326,7 +329,8 @@ def select_free_accounts(sheet, num_accounts):
     # Если количество свободных аккаунтов меньше, чем указано пользователем
     if len(free_accounts) < num_accounts:
         print(MESSAGES["no_free_accounts"].format(available=len(free_accounts)))
-        logging.info(MESSAGES["no_free_accounts"].format(available=len(free_accounts)))
+        # logging.info(MESSAGES["no_free_accounts"].format(available=len(free_accounts)))
+        logger.info(MESSAGES["no_free_accounts"].format(available=len(free_accounts)))
         num_accounts = len(free_accounts)  # Меняем количество на минимальное доступное
 
     return free_accounts[:num_accounts]
@@ -366,12 +370,12 @@ def get_accounts_from_google_sheet():
 
 # Функция для выбора файла базы данных
 def select_database_file():
-    files = os.listdir("databases")
+    files = os.listdir("csv_databases")
     print(MESSAGES["choose_database"])
     for i, file in enumerate(files, 1):
         print(f"{i}. {file}")
     choice = int(input(MESSAGES["input_choice"])) - 1
-    return os.path.join("databases", files[choice])
+    return os.path.join("csv_databases", files[choice])
 
 
 # Функция для отправки уведомления через бота
@@ -384,41 +388,40 @@ async def send_notification(message):
         await bot.session.close()
 
 
-SESSION_FOLDER = "sessions"
-TDATA_FOLDER = "tdata_folder"
+# SESSION_FOLDER = "sessions"
+# TDATA_FOLDER = "tdata_folder"
 
+# async def authenticate_account(account):
+#     phone = account["phone"]
+#     tdata_path = Path(TDATA_FOLDER) / f"{phone}/tdata"
+#     session_path = Path(SESSION_FOLDER) / f"{phone}.session"
 
-async def authenticate_account(account):
-    phone = account["phone"]
-    tdata_path = Path(TDATA_FOLDER) / f"{phone}/tdata"
-    session_path = Path(SESSION_FOLDER) / f"{phone}.session"
+#     # Используем tdata для существующих аккаунтов
+#     if tdata_path.exists() and not session_path.exists():
+#         tdesk = TDesktop(tdata_path, api=oldAPI)
+#         oldAPI = API.TelegramDesktop.Generate(
+#             system="windows", unique_id=str(tdata_path)
+#         )
 
-    # Используем tdata для существующих аккаунтов
-    if tdata_path.exists() and not session_path.exists():
-        tdesk = TDesktop(tdata_path, api=oldAPI)
-        oldAPI = API.TelegramDesktop.Generate(
-            system="windows", unique_id=str(tdata_path)
-        )
+#         # Авторизуемся через Telethon, создаем новую сессию при необходимости
+#         client = await tdesk.ToTelethon(
+#             session=str(session_path), flag=CreateNewSession, api=oldAPI
+#         )
 
-        # Авторизуемся через Telethon, создаем новую сессию при необходимости
-        client = await tdesk.ToTelethon(
-            session=str(session_path), flag=CreateNewSession, api=oldAPI
-        )
+#         newAPI = API.TelegramAndroid.Generate(unique_id=str(session_path))
+#         client = await client.QRLoginToNewClient(
+#             session="official.session", flag=CreateNewSession, api=newAPI
+#         )
+#     else:
+#         # Создаем новую сессию с API Android
+#         newAPI = API.TelegramAndroid.Generate(unique_id=str(session_path))
+#         client = await newAPI.ToTelethon(session=str(session_path))
 
-        newAPI = API.TelegramAndroid.Generate(unique_id=str(session_path))
-        client = await client.QRLoginToNewClient(
-            session="official.session", flag=CreateNewSession, api=newAPI
-        )
-    else:
-        # Создаем новую сессию с API Android
-        newAPI = API.TelegramAndroid.Generate(unique_id=str(session_path))
-        client = await newAPI.ToTelethon(session=str(session_path))
+#     # Подключаемся к клиенту
+#     await client.connect()
+#     await client.PrintSessions()  # Выводим текущие сессии для контроля
 
-    # Подключаемся к клиенту
-    await client.connect()
-    await client.PrintSessions()  # Выводим текущие сессии для контроля
-
-    return client
+#     return client
 
 
 def get_session_file(phone):
@@ -431,7 +434,10 @@ async def send_sms_from_account(account, shared_csv_file, users_queue, sheet):
     status = get_account_status(account, sheet)
     if status != STATUS_FREE:
         print(MESSAGES["user_not_found"].format(name=account["phone"], error=status))
-        logging.warning(
+        # logging.warning(
+        #     MESSAGES["user_not_found"].format(name=account["phone"], error=status)
+        # )
+        logger.warning(
             MESSAGES["user_not_found"].format(name=account["phone"], error=status)
         )
         return
@@ -465,7 +471,15 @@ async def send_sms_from_account(account, shared_csv_file, users_queue, sheet):
     session_file = get_session_file(phone)
 
     async with TelegramClient(
-        SQLiteSession(session_file), api_id, api_hash, proxy=proxy
+        SQLiteSession(session_file),
+        api_id,
+        api_hash,
+        proxy=proxy,
+        device_model="Poco M6 Pro",
+        system_version="13",
+        app_version="T11.5.3 - P11.16.3",
+        lang_code="en",
+        system_lang_code="en-US",
     ) as client:
         # if not await client.is_user_authorized():
         #     await client.send_code_request(phone)
@@ -497,9 +511,8 @@ async def send_sms_from_account(account, shared_csv_file, users_queue, sheet):
             # message_md = message_md.replace("Александр", account_name)
             message_html = markdown(message_md)
 
-        message_limit = int(
-            getenv("MESSAGE_LIMIT")
-        )  # Лимит на отправку сообщений в день
+        # Лимит на отправку сообщений в день
+        message_limit = int(config.MESSAGE_LIMIT)
         messages_sent = 0  # Счетчик отправленных сообщений
 
         while True:
@@ -509,7 +522,8 @@ async def send_sms_from_account(account, shared_csv_file, users_queue, sheet):
                 await send_notification(
                     MESSAGES["message_limit_reached"].format(phone=phone)
                 )
-                logging.info(MESSAGES["message_limit_reached"].format(phone=phone))
+                # logging.info(MESSAGES["message_limit_reached"].format(phone=phone))
+                logger.info(MESSAGES["message_limit_reached"].format(phone=phone))
                 update_status_limit(account, sheet)
                 break
             # Прерываем цикл, если очередь пуста
@@ -530,7 +544,12 @@ async def send_sms_from_account(account, shared_csv_file, users_queue, sheet):
                                     username=user["username"], error=str(e)
                                 )
                             )
-                            logging.error(
+                            # logging.error(
+                            #     MESSAGES["not_found_username"].format(
+                            #         username=user["username"], error=str(e)
+                            #     )
+                            # )
+                            logger.error(
                                 MESSAGES["not_found_username"].format(
                                     username=user["username"], error=str(e)
                                 )
@@ -547,7 +566,10 @@ async def send_sms_from_account(account, shared_csv_file, users_queue, sheet):
                             print(
                                 MESSAGES["not_found_user_id"].format(user_id=user["id"])
                             )
-                            logging.error(
+                            # logging.error(
+                            #     MESSAGES["not_found_user_id"].format(user_id=user["id"])
+                            # )
+                            logger.error(
                                 MESSAGES["not_found_user_id"].format(user_id=user["id"])
                             )
 
@@ -571,7 +593,12 @@ async def send_sms_from_account(account, shared_csv_file, users_queue, sheet):
                                     error=str(e)
                                 )
                             )
-                            logging.error(
+                            # logging.error(
+                            #     MESSAGES["failed_to_get_participants"].format(
+                            #         error=str(e)
+                            #     )
+                            # )
+                            logger.error(
                                 MESSAGES["failed_to_get_participants"].format(
                                     error=str(e)
                                 )
@@ -596,7 +623,10 @@ async def send_sms_from_account(account, shared_csv_file, users_queue, sheet):
                             print(
                                 MESSAGES["failed_to_join_channel"].format(error=str(e))
                             )
-                            logging.error(
+                            # logging.error(
+                            #     MESSAGES["failed_to_join_channel"].format(error=str(e))
+                            # )
+                            logger.error(
                                 MESSAGES["failed_to_join_channel"].format(error=str(e))
                             )
 
@@ -614,7 +644,12 @@ async def send_sms_from_account(account, shared_csv_file, users_queue, sheet):
                                 name=user["name"], phone=phone
                             )
                         )
-                        logging.info(
+                        # logging.info(
+                        #     MESSAGES["start_sending"].format(
+                        #         name=user["name"], phone=phone
+                        #     )
+                        # )
+                        logger.info(
                             MESSAGES["start_sending"].format(
                                 name=user["name"], phone=phone
                             )
@@ -650,7 +685,12 @@ async def send_sms_from_account(account, shared_csv_file, users_queue, sheet):
                                 sleep_time=sleep_time, phone=phone
                             )
                         )
-                        logging.info(
+                        # logging.info(
+                        #     MESSAGES["waiting"].format(
+                        #         sleep_time=sleep_time, phone=phone
+                        #     )
+                        # )
+                        logger.info(
                             MESSAGES["waiting"].format(
                                 sleep_time=sleep_time, phone=phone
                             )
@@ -662,7 +702,12 @@ async def send_sms_from_account(account, shared_csv_file, users_queue, sheet):
                                 name=user["name"]
                             )
                         )
-                        logging.warning(
+                        # logging.warning(
+                        #     MESSAGES["user_not_found_by_username_and_id"].format(
+                        #         name=user["name"]
+                        #     )
+                        # )
+                        logger.warning(
                             MESSAGES["user_not_found_by_username_and_id"].format(
                                 name=user["name"]
                             )
@@ -671,9 +716,9 @@ async def send_sms_from_account(account, shared_csv_file, users_queue, sheet):
                     print("Have to sleep", e.seconds, "seconds")
                     await asyncio.sleep(e.seconds)
                 except PeerFloodError:
-                    # print(f"[!] Получил предупреждение о спаме от Телеграма. Аккаунт {phone} заблокирован.")
                     print(MESSAGES["spam_warning"].format(phone=phone))
-                    logging.warning(MESSAGES["spam_warning"].format(phone=phone))
+                    # logging.warning(MESSAGES["spam_warning"].format(phone=phone))
+                    logger.warning(MESSAGES["spam_warning"].format(phone=phone))
                     await send_notification(
                         MESSAGES["spam_warning"].format(phone=phone)
                     )
@@ -682,13 +727,17 @@ async def send_sms_from_account(account, shared_csv_file, users_queue, sheet):
                     update_status_spam_block(account, sheet)
                     break
                 except Exception as e:
-                    # print(f"[!] Ошибка при отправке сообщения пользователю {user['name']} с аккаунта {phone}: {e}")
                     print(
                         MESSAGES["error"].format(
                             name=user["name"], phone=phone, error=str(e)
                         )
                     )
-                    logging.error(
+                    # logging.error(
+                    #     MESSAGES["error"].format(
+                    #         name=user["name"], phone=phone, error=str(e)
+                    #     )
+                    # )
+                    logger.error(
                         MESSAGES["error"].format(
                             name=user["name"], phone=phone, error=str(e)
                         )
@@ -745,22 +794,25 @@ async def distribute_users_among_accounts(sheet):
                 users_queue.put_nowait(user)
     if users_queue.empty():
         print(MESSAGES["sending_completed"])
-        logging.info(MESSAGES["sending_completed"])
+        # logging.info(MESSAGES["sending_completed"])
+        logger.info(MESSAGES["sending_completed"])
         await send_notification(MESSAGES["sending_completed"])
         return  # Завершаем программу, если все сообщения отправлены
 
     while True:
         if users_queue.empty():
             print(MESSAGES["sending_completed"])
-            logging.info(MESSAGES["sending_completed"])
+            # logging.info(MESSAGES["sending_completed"])
             await send_notification(MESSAGES["sending_completed"])
+            logger.info(MESSAGES["sending_completed"])
             break  # Завершаем программу, если все сообщения отправлены
         # Получаем свободные аккаунты
         selected_accounts = select_free_accounts(sheet, num_accounts)
 
         if not selected_accounts:
             print(MESSAGES["no_available_accounts"])
-            logging.info(MESSAGES["no_available_accounts"])
+            # logging.info(MESSAGES["no_available_accounts"])
+            logger.info(MESSAGES["no_available_accounts"])
             break
 
         # Запуск рассылки на выбранных аккаунтах
