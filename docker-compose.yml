@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  userbot:
+    build: .
+    image: userbot:1.0
+    container_name: userbot-container
+    volumes:
+      - ./sqlite_database:/app/sqlite_database
+      - ./res_sessions:/app/res_sessions
+      - ./config:/app/config
+      - ./blacklists:/app/blacklists
+      - ./csv_databases:/app/csv_databases
+      - ./excel_reports:/app/excel_reports
+      - ./logs:/app/logs
+      - ./monitoring_channels:/app/monitoring_channels
+      - ./tdata_folder:/app/tdata_folder
+    tty: true
+    stdin_open: true     # для интерактивного CLI
+    network_mode: host
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: ["python3","-u","main.py"]

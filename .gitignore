@@ -1,6 +1,7 @@
 ### Python ###
 # Byte-compiled / optimized / DLL files
 __pycache__/
+**/__pycache__*
 *.py[cod]
 *$py.class
 
@@ -113,13 +114,20 @@ $RECYCLE.BIN/
 
 # My files
 logs/
-system/*
-!system/.gitkeep
-csv_databases/
-sqlite_database/
-tdata_folder/
+# system/*
+# !system/.gitkeep
+csv_databases/*.csv
+!csv_databases/.gitkeep
+sqlite_database/*
+!sqlite_database/.gitkeep
+tdata_folder/**
+!tdata_folder/.gitkeep
 *.session
-creds.json
-messages/msg.md
+# messages/msg.md
 README.md
-res_session/
+res_sessions/*
+!res_sessions/.gitkeep
+excel_reports/*.xlsx
+!excel_reports/.gitkeep
+gpt4free/
+har_and_cookies/

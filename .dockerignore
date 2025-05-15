@@ -1,0 +1,12 @@
+**/__pycache__
+**/__pycache__*
+**/*.pyc
+**/*.pyo
+**/*.pyd
+.vscode
+.git
+.gitignore
+README.md
+LICENSE
+gpt4free/
+har_and_cookies/

@@ -1,11 +1,11 @@
 {
-    "api_id": 2040,
-    "api_hash": "b18441a1ff607e10a989891a5462e627",
-    "device_model": "Z77X-D3H",
-    "system_version": "Windows 8.1",
-    "app_version": "3.4.3 x64",
+    "api_id": 35979,
+    "api_hash": "fac7419bfbfff19c8241c268017fee2e",
+    "device_model": "Poco M6 Pro",
+    "system_version": "13",
+    "app_version": "T11.5.3 - P11.16.3",
     "system_lang_code": "en-US",
-    "lang_pack": "tdesktop",
+    "lang_pack": "android",
     "lang_code": "en",
-    "pid": 17004822619284915871
+    "pid": 6685055059721363704
 }

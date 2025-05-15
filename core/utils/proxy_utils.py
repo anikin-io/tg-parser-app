@@ -12,17 +12,17 @@ class ProxyUtils:
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(
-                    "http://ip-api.com/json/", proxy=proxies
+                    "https://ipinfo.io/json", proxy=proxies
                 ) as response:
                     if response.status != 200:
                         print("[!] Прокси нерабочие. Завершение работы скрипта.")
                         return False
 
                     data = await response.json()
+                    ip = data.get("ip", "Неизвестно")
+                    country = data.get("country", "Неизвестно")
                     city = data.get("city", "Неизвестно")
-                    print(
-                        f"[+] Проверка IP: {data['query']} (Страна: {data['country']}, Город: {city})"
-                    )
+                    print(f"[+] Проверка IP: {ip} (Страна: {country}, Город: {city})")
                     return True
 
         except Exception as e:

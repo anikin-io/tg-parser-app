@@ -110,7 +110,8 @@ class AccountRepository:
         accounts_in_work = (
             session.query(Account).filter(Account.status == STATUS_IN_WORK).all()
         )
-        for account in accounts_in_work:
-            account.status = STATUS_FREE
-        session.commit()
+        if accounts_in_work != None:
+            for account in accounts_in_work:
+                account.status = STATUS_FREE
+            session.commit()
         session.close()

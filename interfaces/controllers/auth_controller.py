@@ -9,8 +9,8 @@ class AuthController:
         """Возвращает список свободных аккаунтов (сущности Account)."""
         return self.use_case.get_free_accounts()
     
-    async def authenticate_account(self, phone: str, proxy: dict = None):
+    async def authenticate_account(self, phone: str):
         """
         Подготавливает аккаунт: проверка наличия session, конвертация (при необходимости) и авторизация. Возвращает объект TelegramClient.
         """
-        return await self.use_case.authenticate(phone, proxy)
+        return await self.use_case.authenticate(phone)

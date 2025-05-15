@@ -1,16 +1,11 @@
-import os
-import re
-
-from telethon import TelegramClient
-from infrastructure.converters.tdata_converter import TDataConverter
 from infrastructure.repositories.account_repo import AccountRepository
 
 
-class AccountUseCase:
-    """Логика работы с аккаунтами из БД"""
+class AccountSelectionUseCase:
+    """Логика выбора аккаунта из БД"""
 
-    # def __init__(self):
-    #     self.account_repo = AccountRepository()
+    def __init__(self, account_repo: AccountRepository):
+        self.account_repo = account_repo
 
     # def add_account(
     #     self, phone, name, proxy_ip, proxy_port, proxy_username, proxy_password, status
@@ -24,9 +19,9 @@ class AccountUseCase:
     #     """Получает список всех аккаунтов."""
     #     return self.account_repo.get_all_accounts()
 
-    # def get_free_accounts(self):
-    #     """Получает список свободных аккаунтов"""
-    #     return self.account_repo.get_free_accounts()
+    def get_free_accounts(self):
+        """Получает список свободных аккаунтов"""
+        return self.account_repo.get_free_accounts()
 
     # def search_account_by_phone(self, phone):
     #     """Ищет аккаунт по номеру телефона."""

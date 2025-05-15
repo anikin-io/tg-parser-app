@@ -1,0 +1,14 @@
+aiogram==3.13.1
+aiohttp>=3.9.0,<3.11
+cachetools==5.5.0
+# opentele==1.15.1
+pandas==2.2.3
+phonenumbers==8.13.55
+portalocker==3.1.1
+pycountry==24.6.1
+python-dotenv==1.0.1
+PyYAML==6.0.2
+requests==2.32.3
+SQLAlchemy==2.0.38
+PySocks==1.7.1
+Telethon==1.38.1
